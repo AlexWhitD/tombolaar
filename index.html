@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rifa Apodaca Riders 🚴‍♂️ | Rodada Nocturna</title>
+  <meta name="description" content="Sistema oficial de sorteos y rifas 1 a 1 para Apodaca Riders. Modo Ruleta y Gran Tómbola con físicas en tiempo real.">
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="icon" href="assets/design/apodaca_club_emblem.jpg" type="image/jpeg">
+</head>
+<body>
+  <!-- Canvas para confeti de celebración -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Header Superior -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="logo-group">
+        <img src="assets/design/apodaca_club_emblem.jpg" alt="Escudo Apodaca Riders" class="header-club-emblem">
+        <div class="logo-text">
+          <h1>APODACA RIDERS <span>🚴‍♂️</span></h1>
+          <p>Rodada Nocturna • Rifa Oficial</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-load-apodaca" class="btn-secondary btn-demo" title="Recargar la lista oficial de los 63 ciclistas">
+          <span>🌙</span> Lista Apodaca (63)
+        </button>
+        <button id="btn-sound-toggle" class="btn-icon" title="Silenciar / Activar sonido">
+          🔊
+        </button>
+        <button id="btn-fullscreen" class="btn-icon" title="Pantalla completa">
+          ⛶
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Layout Principal -->
+  <main class="main-wrapper">
+    <div class="dashboard-grid">
+
+      <!-- ==============================================
+           COLUMNA IZQUIERDA: PARTICIPANTES Y PREMIOS
+           ============================================== -->
+      <aside class="left-column">
+        
+        <!-- Panel de Ciclistas -->
+        <section class="glass-panel">
+          <div class="panel-header">
+            <h2 class="panel-title">
+              <span>🚴‍♂️</span> Ciclistas
+            </h2>
+            <span id="count-participants" class="count-pill">0</span>
+          </div>
+
+          <!-- Formulario Agregar Ciclista -->
+          <div class="add-box">
+            <input type="text" id="participant-input" class="input-field" placeholder="Nombre del ciclista..." autocomplete="off">
+            <button id="btn-add-participant" class="btn-add" title="Agregar ciclista">+</button>
+          </div>
+
+          <div class="quick-toolbar">
+            <button id="btn-bulk-participants" class="btn-ghost-sm">📋 Pegar lista (WhatsApp)</button>
+            <button id="btn-clear-all" class="btn-ghost-sm" style="color: var(--color-red);" title="Borrar toda la lista">🗑️ Vaciar</button>
+          </div>
+
+          <!-- Lista con scroll de participantes -->
+          <div id="participants-list" class="scroll-list"></div>
+        </section>
+
+        <!-- Panel de Premios -->
+        <section class="glass-panel" style="margin-top: 1.25rem;">
+          <div class="panel-header">
+            <h2 class="panel-title">
+              <span>🎁</span> Premios
+            </h2>
+            <span id="count-prizes" class="count-pill cyan">0</span>
+          </div>
+
+          <!-- Formulario Agregar Premio -->
+          <div class="add-box">
+            <input type="text" id="prize-input" class="input-field" placeholder="Ej: Casco, Jersey, Luces..." autocomplete="off">
+            <button id="btn-add-prize" class="btn-add" title="Agregar premio">+</button>
+          </div>
+
+          <div class="quick-toolbar">
+            <button id="btn-bulk-prizes" class="btn-ghost-sm">📋 Pegar premios</button>
+          </div>
+
+          <!-- Lista de Premios pendientes -->
+          <div id="prizes-list" class="scroll-list" style="max-height: 220px;"></div>
+        </section>
+
+      </aside>
+
+      <!-- ==============================================
+           COLUMNA CENTRAL (50% DEL ANCHO DE LA PANTALLA)
+           ============================================== -->
+      <section class="stage-column">
+        <div class="stage-panel">
+
+          <!-- Selector de Modo de Sorteo -->
+          <div class="mode-switcher-group">
+            <button id="btn-mode-reel" class="btn-mode">🎰 Ruleta de Nombres</button>
+            <button id="btn-mode-tombola" class="btn-mode active">🎱 Gran Tómbola de Bolas</button>
+          </div>
+
+          <!-- Banner del Premio Actual a Sortear -->
+          <div class="target-prize-card">
+            <div class="target-prize-left">
+              <div class="prize-trophy-icon">🏆</div>
+              <div>
+                <div class="prize-label">Premio en Disputa</div>
+                <div id="current-prize-display" class="prize-current-name">Cargando premio...</div>
+              </div>
+            </div>
+            <div>
+              <select id="current-prize-select" class="prize-selector-select" title="Seleccionar premio"></select>
+            </div>
+          </div>
+
+          <!-- 1. VISTA MODO RULETA -->
+          <div id="reel-stage-container" class="suspense-arena" style="display: none;">
+            <div class="side-mascot-card" title="¡Victoria Apodaca Riders!">
+              <img src="assets/design/winner_victory_trophy.jpg" alt="Trofeo Ciclista">
+            </div>
+
+            <!-- Ventana de Ruleta Vertical -->
+            <div class="reel-viewport-container">
+              <div class="target-crosshair">
+                <span class="target-marker left">▶</span>
+                <div class="target-line"></div>
+                <span class="target-marker right">◀</span>
+              </div>
+
+              <div id="reel-viewport" class="reel-viewport">
+                <div id="reel-track" class="reel-track"></div>
+              </div>
+            </div>
+
+            <div class="side-mascot-card" title="¡Rueda con Apodaca Riders!">
+              <img src="assets/design/male_cyclist_with_bike.jpg" alt="Ciclista y Bici">
+            </div>
+          </div>
+
+          <!-- 2. VISTA MODO GRAN TÓMBOLA (OCUPA TODO EL ESCENARIO CENTRAL SIN IMÁGENES AL LADO) -->
+          <div id="tombola-stage-container" class="tombola-stage-container active">
+            <div class="tombola-canvas-wrapper">
+              <canvas id="tombola-canvas"></canvas>
+            </div>
+          </div>
+
+          <!-- Botón de Acción Principal de Sorteo -->
+          <div class="action-btn-wrapper">
+            <button id="btn-spin" class="btn-spin-action">
+              <span class="spin-icon-bike">⚡</span>
+              <span id="btn-spin-text">¡GIRAR TÓMBOLA DE BOLAS!</span>
+              <span class="spin-icon-bike">🏁</span>
+            </button>
+          </div>
+
+          <p id="stage-status-hint" class="stage-status-hint">
+            Presiona el botón para hacer girar la tómbola y extraer la bola ganadora.
+          </p>
+
+        </div>
+      </section>
+
+      <!-- ==============================================
+           COLUMNA DERECHA: PODIO Y MURO DE GANADORES
+           ============================================== -->
+      <aside class="right-column">
+        <section class="glass-panel podium-panel">
+          <div class="panel-header">
+            <h2 class="panel-title">
+              <span>🥇</span> Podio de Ganadores
+            </h2>
+            <span id="count-winners" class="count-pill gold">0</span>
+          </div>
+
+          <p class="podium-desc">
+            Ganadores premiados (se descartan automáticamente para no repetirse):
+          </p>
+
+          <!-- Lista de Ganadores Históricos -->
+          <div id="podium-list" class="podium-list"></div>
+
+          <!-- Barra de Exportación y Reinicio -->
+          <div class="export-bar">
+            <button id="btn-copy-whatsapp" class="btn-whatsapp">
+              <span>💬</span> Copiar para WhatsApp
+            </button>
+            <div style="display: flex; gap: 0.5rem;">
+              <button id="btn-download-report" class="btn-secondary" style="flex: 1; font-size: 0.8rem;">
+                📥 Descargar Acta
+              </button>
+              <button id="btn-reset-raffle" class="btn-secondary" style="font-size: 0.8rem; color: var(--color-gold-glow);" title="Regresar ganadores y premios a la lista">
+                🔄 Reiniciar Rifa
+              </button>
+            </div>
+          </div>
+
+        </section>
+      </aside>
+
+    </div>
+  </main>
+
+  <!-- ==============================================
+       MODAL DE CELEBRACIÓN DEL GANADOR
+       ============================================== -->
+  <div id="winner-modal" class="modal-overlay">
+    <div class="winner-modal-card">
+      <div class="modal-trophy-badge">🏆</div>
+      <div class="modal-subtitle">¡Tenemos Ganador Oficial!</div>
+      
+      <div id="modal-winner-name" class="modal-winner-name">Nombre del Ciclista</div>
+
+      <div class="modal-prize-box">
+        <div class="modal-prize-label">Se ha ganado</div>
+        <div id="modal-prize-title" class="modal-prize-title">Premio</div>
+      </div>
+
+      <div class="modal-mascot-celebration">
+        <img id="modal-character-img" src="assets/design/winner_victory_trophy.jpg" alt="Ganador">
+      </div>
+
+      <p class="modal-rule-notice">
+        ✅ Ciclista y premio retirados de la lista para la siguiente vuelta.
+      </p>
+
+      <button id="btn-claim-prize" class="btn-modal-claim">
+        ¡CONTINUAR CON EL SIGUIENTE PREMIO! 🚴💨
+      </button>
+    </div>
+  </div>
+
+  <!-- ==============================================
+       MODAL DE IMPORTACIÓN MASIVA
+       ============================================== -->
+  <div id="bulk-modal" class="modal-overlay">
+    <div class="bulk-modal-card">
+      <h3 id="bulk-modal-title" class="bulk-modal-title">Pegar Lista</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.35rem;">
+        Puedes pegar la lista de WhatsApp tal cual (con números y emojis):
+      </p>
+      <textarea id="bulk-textarea" class="bulk-textarea"></textarea>
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button id="btn-cancel-bulk" class="btn-secondary">Cancelar</button>
+        <button id="btn-save-bulk" class="btn-secondary" style="background: var(--color-magenta); color: #fff; border-color: var(--color-magenta);">Guardar Ciclistas</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Flotante -->
+  <div id="toast-msg" class="toast-msg">Mensaje del sistema</div>
+
+  <!-- Scripts -->
+  <script src="scripts/audio.js"></script>
+  <script src="scripts/confetti.js"></script>
+  <script src="scripts/tombola.js"></script>
+  <script src="scripts/app.js"></script>
+</body>
+</html>
